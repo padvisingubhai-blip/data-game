@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataSell Tycoon</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f172a; color: #f8fafc; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 400px; background: #1e293b; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1 { text-align: center; color: #38bdf8; font-size: 24px; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #94a3b8; font-size: 12px; margin-bottom: 20px; }
+        .stats-box { background: #0f172a; border-radius: 10px; padding: 15px; margin-bottom: 20px; border: 1px solid #334155; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .stat-val { font-weight: bold; color: #4ade80; }
+        .mine-btn { width: 100%; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); transition: transform 0.1s; margin-bottom: 15px; }
+        .mine-btn:active { transform: scale(0.96); }
+        .sell-btn { width: 100%; background: linear-gradient(135deg, #10b981, #047857); color: white; border: none; padding: 12px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
+        .section-title { font-size: 16px; color: #38bdf8; margin-bottom: 10px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+        .upgrade-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .upgrade-info div:first-child { font-weight: bold; font-size: 14px; }
+        .upgrade-info div:last-child { font-size: 11px; color: #94a3b8; }
+        .buy-btn { background: #f59e0b; color: #0f172a; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .buy-btn:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>DataSell Tycoon</h1>
+        <div class="subtitle">Internet Becho, Paise Kamao!</div>
+
+        <div class="stats-box">
+            <div class="stat-row"><span>Cash:</span> <span class="stat-val" id="cash">₹0</span></div>
+            <div class="stat-row"><span>Available Data:</span> <span class="stat-val" id="data">0.00 GB</span></div>
+            <div class="stat-row"><span>Data Storage Limit:</span> <span class="stat-val" id="maxData">1.00 GB</span></div>
+            <div class="stat-row"><span>Auto Mining/sec:</span> <span class="stat-val" id="autoRate">0.00 GB</span></div>
+        </div>
+
+        <button class="mine-btn" onclick="collectData()">📱 Generate Data (+0.1 GB)</button>
+        <button class="sell-btn" onclick="sellData()">💰 Sell All Data (₹10/GB)</button>
+
+        <div class="section-title">Upgrades</div>
+        <div id="upgradesList"></div>
+    </div>
+
+    <script>
+        let game = {
+            cash: 0,
+            data: 0,
+            maxData: 1.0,
+            clickPower: 0.1,
+            autoSpeed: 0,
+            upgrades: [
+                { id: 'u1', name: '5G Router', desc: '+0.05 GB/sec auto collection', cost: 50, rate: 0.05, count: 0 },
+                { id: 'u2', name: 'Cloud Server', desc: '+0.2 GB/sec auto collection', cost: 250, rate: 0.2, count: 0 },
+                { id: 'u3', name: 'Data Center', desc: '+1.0 GB/sec auto collection', cost: 1200, rate: 1.0, count: 0 }
+            ]
+        };
+
+        function collectData() {
+            if (game.data + game.clickPower <= game.maxData) {
+                game.data += game.clickPower;
+            } else {
+                game.data = game.maxData;
+            }
+            updateUI();
+        }
+
+        function sellData() {
+            let earnings = game.data * 10; // 1 GB = ₹10
+            game.cash += earnings;
+            game.data = 0;
+            updateUI();
+        }
+
+        function buyUpgrade(id) {
+            let up = game.upgrades.find(u => u.id === id);
+            if (game.cash >= up.cost) {
+                game.cash -= up.cost;
+                game.autoRate += up.rate;
+                up.count++;
+                up.cost = Math.floor(up.cost * 1.5);
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('cash').innerText = '₹' + game.cash.toFixed(2);
+            document.getElementById('data').innerText = game.data.toFixed(2) + ' GB';
+            document.getElementById('maxData').innerText = game.maxData.toFixed(2) + ' GB';
+            document.getElementById('autoRate').innerText = game.autoRate.toFixed(2) + ' GB';
+
+            let listHTML = '';
+            game.upgrades.forEach(u => {
+                let disabled = game.cash < u.cost ? 'disabled' : '';
+                listHTML += `
+                    <div class="upgrade-card">
+                        <div class="upgrade-info">
+                            <div>${u.name} (${u.count})</div>
+                            <div>${u.desc}</div>
+                        </div>
+                        <button class="buy-btn" ${disabled} onclick="buyUpgrade('${u.id}')">₹${u.cost}</button>
+                    </div>
+                `;
+            });
+            document.getElementById('upgradesList').innerHTML = listHTML;
+        }
+
+        // Auto mining loop per second
+        setInterval(() => {
+            if (game.autoRate > 0) {
+                if (game.data + game.autoRate <= game.maxData) {
+                    game.data += game.autoRate;
+                } else {
+                    game.data = game.maxData;
+                }
+                updateUI();
+            }
+        }, 1000);
+
+        updateUI();
+    </script>
+</body>
+</html>
